@@ -26,10 +26,11 @@ export const create = async (req, res) => {
 
 export const update = async (req, res) => {
     
-    const data = new PostMessage()._id('6053cbf1d1b0a01dbc25a147');
+    const { id } = req.params;
+    const { title } = req.body;
 
     try {
-        await data.save();
+        const data = await PostMessage.findByIdAndUpdate(id, { title });
         res.status(201).json({ data });
     }catch(err) {
         res.status(409).json({ message: err.message });
@@ -41,7 +42,7 @@ export const remove = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const data = await PostMessage.findById(id).findOneAndDelete();
+        const data = await PostMessage.findByIdAndDelete(id);
         res.status(201).json({ data });
     }catch(err) {
         res.status(409).json({ Error: err.message });
