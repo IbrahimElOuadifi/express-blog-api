@@ -5,7 +5,7 @@ export const get = async (req, res) => {
     const query = req.query;
 
     try {
-        const data = await Follow.findOne(query);
+        const data = await Follow.find(query);
         res.status(200).json(data);
     }catch(err) {
         res.status(404).json({ message: err.message });
