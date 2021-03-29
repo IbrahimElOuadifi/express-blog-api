@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import { auth, posts, likes, comments, saves } from './routes/index.js';
+import { auth, follows, posts, likes, comments, saves } from './routes/index.js';
 
 const app = express();
 
@@ -9,6 +9,7 @@ app.use(express.json({ limit: '30mb', extended: true }));
 app.use(express.urlencoded({ limit: '30mb', extended: true }));
 app.use(cors());
 app.use('/auth', auth);
+app.use('/follow', follows);
 app.use('/post', posts);
 app.use('/like', likes);
 app.use('/comment', comments);
