@@ -14,7 +14,7 @@ export const get = async (req, res) => {
     try {
         const userInfo = await User.findById(id);
         res.status(200).json({ userInfo });
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message, code: 'err' });
     }
 }
@@ -36,7 +36,7 @@ export const remove = async (req, res) => {
         await Save.deleteMany({ fromUser: id });
         const data = await User.findByIdAndDelete(id);
         res.status(200).json({ data });
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message, code: 'err' });
     }
 }
@@ -89,13 +89,58 @@ export const signup = async (req, res) => {
 
 export const google = async (req, res) => {
 
-    const { email } = req.body;
+    const { email, name, urlPic } = req.body;
 
     try {
         const existingUser = await User.findOne({ email });
-        if(!existingUser) return res.status(404).json({ message: 'This user isn\'t registerd yet!', code: 'register' });
-        const token = jwt.sign({ id: existingUser._id, email: existingUser.email }, 'test', { expiresIn: '1h' });
-        return res.status(200).json({ result: existingUser, token });
+        if(existingUser){
+            const token = jwt.sign({ id: existingUser._id, email: existingUser.email }, 'test', { expiresIn: '1h' });
+            return res.status(200).json({ result: existingUser, token });
+        } else {
+            const result = await User.create({ email, name, urlPic });
+            const token = jwt.sign({ email: result.email, id: result.id }, 'test', { expiresIn: '1h' });
+            res.status(201).json({ result, token });
+        }
+    } catch (err) {
+        res.status(400).json({ message: err.message, code: 'err' });
+    }
+}
+
+export const setPassword = async (req, res) => {
+
+    const id = req.params.id;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    try {
+        const existingUser = await User.findById(id);
+        if(!existingUser) return res.status(404).json({ message: 'User not found!', code: 'user_err' });
+        if(existingUser.password) {
+            if(validator.isEmpty(oldPassword) || validator.isEmpty(newPassword) || validator.isEmpty(confirmPassword)) return res.status(400).json({ message: 'Fields is requred!', code: 'user_fields' });
+            if(newPassword !== confirmPassword) return res.status(400).json({ message: 'Passwords don\'t match!', code: 'email_err' });
+            const isPasswordCorrect = await bcrypt.compare(oldPassword, existingUser.password);
+            if(!isPasswordCorrect) return res.status(400).json({ message: 'Password incorrect!', code: 'pass_err' });
+            const hashedPassord = await bcrypt.hash(newPassword, 12);
+            const result = await User.findByIdAndUpdate(id, { $set: { password: hashedPassord } });
+            res.status(201).json({ result });
+        } else {
+            if(validator.isEmpty(newPassword) || validator.isEmpty(confirmPassword)) return res.status(400).json({ message: 'Fields is requred!', code: 'user_fields' });
+            if(newPassword !== confirmPassword) return res.status(400).json({ message: 'Passwords don\'t match!', code: 'email_err' });
+            const hashedPassord = await bcrypt.hash(newPassword, 12);
+            const result = await User.findByIdAndUpdate(id, { $set: { password: hashedPassord } });
+            res.status(201).json({ result });
+        }
+    } catch (err) {
+        res.status(400).json({ message: err.message, code: 'err' });
+    }
+}
+
+export const getPassword = async (req, res) => {
+
+    const _id = req.params.id;
+
+    try {
+        const existingUser = await User.findOne({ _id });
+        res.status(200).json({ password: existingUser.password });
     } catch (err) {
         res.status(400).json({ message: err.message, code: 'err' });
     }
